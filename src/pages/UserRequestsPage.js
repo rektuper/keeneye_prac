@@ -1,18 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
-    Container,
-    Typography,
-    TableContainer,
-    Table,
-    TableHead,
-    TableRow,
-    TableCell,
-    TableBody,
-    Paper,
-    CircularProgress,
-    TablePagination,
-    TextField,
-    Box,
+    Container, Typography, TableContainer, Table, TableHead, TableRow, TableCell,
+    TableBody, Paper, CircularProgress, TablePagination, Box,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
@@ -23,57 +12,49 @@ export default function UserRequestsPage() {
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [search, setSearch] = useState('');
     const [total, setTotal] = useState(0);
 
     useEffect(() => {
-        if (!user) return;
+        if (!user) {
+            setRequests([]);
+            setLoading(false);
+            return;
+        }
 
         setLoading(true);
 
-        api
-            .get('/requests', {
-                headers: { Authorization: `Bearer ${token}` },
-                params: {
-                    userId: user.id,
-                    _page: page + 1,
-                    _limit: rowsPerPage,
-                    title_like: search,
-                },
-            })
+        api.get('/requests', {
+            headers: { Authorization: `Bearer ${token}` },
+        })
             .then((res) => {
-                setRequests(res.data);
-                const totalCount = res.headers['x-total-count'];
-                if (totalCount) setTotal(parseInt(totalCount, 10));
+                const filtered = res.data.filter(r => r.userId === user.id);
+                setRequests(filtered);
+                setTotal(filtered.length);
             })
             .catch(() => {
                 setRequests([]);
+                setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [page, rowsPerPage, search, user, token]);
+    }, [user, token]);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
     };
+
     const handleChangeRowsPerPage = (event) => {
         setRowsPerPage(parseInt(event.target.value, 10));
         setPage(0);
     };
+
+    // Для пагинации берём срез
+    const paginatedRequests = requests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
         <Container sx={{ mt: 4 }}>
             <Typography variant="h5" gutterBottom>
                 Мои заявки
             </Typography>
-
-            <Box mb={2}>
-                <TextField
-                    label="Поиск по названию"
-                    value={search}
-                    onChange={(e) => setSearch(e.target.value)}
-                    fullWidth
-                />
-            </Box>
 
             {loading ? (
                 <CircularProgress />
@@ -90,7 +71,14 @@ export default function UserRequestsPage() {
                                 </TableRow>
                             </TableHead>
                             <TableBody>
-                                {requests.map((req) => (
+                                {paginatedRequests.length === 0 && (
+                                    <TableRow>
+                                        <TableCell colSpan={4} align="center">
+                                            Заявки не найдены
+                                        </TableCell>
+                                    </TableRow>
+                                )}
+                                {paginatedRequests.map((req) => (
                                     <TableRow
                                         key={req.id}
                                         hover
@@ -106,13 +94,6 @@ export default function UserRequestsPage() {
                                         </TableCell>
                                     </TableRow>
                                 ))}
-                                {requests.length === 0 && (
-                                    <TableRow>
-                                        <TableCell colSpan={4} align="center">
-                                            Заявки не найдены
-                                        </TableCell>
-                                    </TableRow>
-                                )}
                             </TableBody>
                         </Table>
                     </TableContainer>
