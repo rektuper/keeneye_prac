@@ -5,10 +5,10 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function LoginPage() {
-    const [form, setForm] = useState({ name: '', password: '' });
+    const [form, setForm] = useState({ email: '', password: '' });
     const [error, setError] = useState('');
+    const { saveToken } = useAuth();
     const navigate = useNavigate();
-    const { saveUser } = useAuth();
 
     const handleChange = (e) => {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -17,11 +17,12 @@ export default function LoginPage() {
     const handleLogin = async () => {
         setError('');
         try {
-            const res = await api.post('/login', form);
-            saveUser(res.data);  // сохраняем пользователя из ответа
+            const res = await api.post('/auth', form);
+            console.log('Login response:', res.data); // 👈 проверь токен
+            saveToken(res.data.token);
             navigate('/');
         } catch {
-            setError('Неверное имя или пароль');
+            setError('Неверный логин или пароль');
         }
     };
 
@@ -29,32 +30,9 @@ export default function LoginPage() {
         <Container maxWidth="xs" sx={{ mt: 8 }}>
             <Typography variant="h5" gutterBottom>Вход</Typography>
             {error && <Alert severity="error">{error}</Alert>}
-
-            <TextField
-                label="Имя"
-                name="name"
-                fullWidth
-                margin="normal"
-                onChange={handleChange}
-                value={form.name}
-            />
-            <TextField
-                label="Пароль"
-                name="password"
-                type="password"
-                fullWidth
-                margin="normal"
-                onChange={handleChange}
-                value={form.password}
-            />
-
-            <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                onClick={handleLogin}
-                sx={{ mt: 2 }}
-            >
+            <TextField label="Email" name="email" fullWidth margin="normal" onChange={handleChange} />
+            <TextField label="Пароль" name="password" type="password" fullWidth margin="normal" onChange={handleChange} />
+            <Button variant="contained" fullWidth sx={{ mt: 2 }} onClick={handleLogin}>
                 Войти
             </Button>
         </Container>

@@ -1,31 +1,32 @@
-import React, { createContext, useContext, useState } from 'react';
+import { createContext, useContext, useEffect, useState } from 'react';
+import { jwtDecode } from 'jwt-decode';
 
-const AuthContext = createContext();
+const AuthContext = createContext(null);
 
-export function AuthProvider({ children }) {
+export const AuthProvider = ({ children }) => {
+    const [token, setToken] = useState(() => localStorage.getItem('token'));
     const [user, setUser] = useState(() => {
-        const savedUser = localStorage.getItem('user');
-        return savedUser ? JSON.parse(savedUser) : null;
+        const saved = localStorage.getItem('token');
+        return saved ? jwtDecode(saved) : null;
     });
 
-    const saveUser = (userData) => {
-        setUser(userData);
-        localStorage.setItem('user', JSON.stringify(userData));
+    const saveToken = (newToken) => {
+        localStorage.setItem('token', newToken);
+        setToken(newToken);
+        setUser(jwtDecode(newToken));
     };
 
     const logout = () => {
+        localStorage.removeItem('token');
+        setToken(null);
         setUser(null);
-        localStorage.removeItem('user');
-        // если есть, можно вызвать api.post('/logout')
     };
 
     return (
-        <AuthContext.Provider value={{ user, saveUser, logout }}>
+        <AuthContext.Provider value={{ user, token, saveToken, logout }}>
             {children}
         </AuthContext.Provider>
     );
-}
+};
 
-export function useAuth() {
-    return useContext(AuthContext);
-}
+export const useAuth = () => useContext(AuthContext);

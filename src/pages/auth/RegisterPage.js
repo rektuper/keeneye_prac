@@ -5,10 +5,14 @@ import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../../context/AuthContext';
 
 export default function RegisterPage() {
-    const [form, setForm] = useState({ name: '', password: '' });
+    const [form, setForm] = useState({
+        fullName: '',
+        email: '',
+        password: ''
+    });
     const [error, setError] = useState('');
+    const { saveToken } = useAuth();
     const navigate = useNavigate();
-    const { saveUser } = useAuth();
 
     const handleChange = (e) => {
         setForm(prev => ({ ...prev, [e.target.name]: e.target.value }));
@@ -19,17 +23,13 @@ export default function RegisterPage() {
         try {
             const res = await api.post('/register', {
                 ...form,
-                email: form.name,
-                role: 'user',
+                role: 'user'
             });
-            saveUser({
-                ...res.data,
-                name: form.name,
-                role: 'user',
-            });
+            console.log('Register response:', res.data);
+            saveToken(res.data.token);
             navigate('/');
         } catch {
-            setError('Ошибка регистрации. Возможно, имя уже используется.');
+            setError('Ошибка регистрации. Возможно, email уже занят.');
         }
     };
 
@@ -37,32 +37,10 @@ export default function RegisterPage() {
         <Container maxWidth="xs" sx={{ mt: 8 }}>
             <Typography variant="h5" gutterBottom>Регистрация</Typography>
             {error && <Alert severity="error">{error}</Alert>}
-
-            <TextField
-                label="Имя"
-                name="name"
-                fullWidth
-                margin="normal"
-                onChange={handleChange}
-                value={form.name}
-            />
-            <TextField
-                label="Пароль"
-                name="password"
-                type="password"
-                fullWidth
-                margin="normal"
-                onChange={handleChange}
-                value={form.password}
-            />
-
-            <Button
-                fullWidth
-                variant="contained"
-                color="primary"
-                onClick={handleRegister}
-                sx={{ mt: 2 }}
-            >
+            <TextField label="Имя" name="fullName" fullWidth margin="normal" onChange={handleChange} />
+            <TextField label="Email" name="email" fullWidth margin="normal" onChange={handleChange} />
+            <TextField label="Пароль" name="password" type="password" fullWidth margin="normal" onChange={handleChange} />
+            <Button variant="contained" fullWidth sx={{ mt: 2 }} onClick={handleRegister}>
                 Зарегистрироваться
             </Button>
         </Container>
