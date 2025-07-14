@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import {
     Container, Typography, TableContainer, Table, TableHead, TableRow, TableCell,
-    TableBody, Paper, CircularProgress, TablePagination, Box,
+    TableBody, Paper, CircularProgress, TablePagination, TextField, Box,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
@@ -13,6 +13,7 @@ export default function UserRequestsPage() {
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
     const [total, setTotal] = useState(0);
+    const [search, setSearch] = useState('');
 
     useEffect(() => {
         if (!user) {
@@ -27,7 +28,13 @@ export default function UserRequestsPage() {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then((res) => {
-                const filtered = res.data.filter(r => r.userId === user.id);
+                let filtered = res.data.filter(r => r.userId === user.id);
+
+                if (search.trim()) {
+                    const lowerSearch = search.toLowerCase();
+                    filtered = filtered.filter(r => r.title.toLowerCase().includes(lowerSearch));
+                }
+
                 setRequests(filtered);
                 setTotal(filtered.length);
             })
@@ -36,7 +43,7 @@ export default function UserRequestsPage() {
                 setTotal(0);
             })
             .finally(() => setLoading(false));
-    }, [user, token]);
+    }, [user, token, search]);
 
     const handleChangePage = (event, newPage) => {
         setPage(newPage);
@@ -47,7 +54,11 @@ export default function UserRequestsPage() {
         setPage(0);
     };
 
-    // Для пагинации берём срез
+    const handleSearchChange = (e) => {
+        setSearch(e.target.value);
+        setPage(0);
+    };
+
     const paginatedRequests = requests.slice(page * rowsPerPage, page * rowsPerPage + rowsPerPage);
 
     return (
@@ -55,6 +66,15 @@ export default function UserRequestsPage() {
             <Typography variant="h5" gutterBottom>
                 Мои заявки
             </Typography>
+
+            <Box mb={2}>
+                <TextField
+                    label="Поиск по названию"
+                    value={search}
+                    onChange={handleSearchChange}
+                    fullWidth
+                />
+            </Box>
 
             {loading ? (
                 <CircularProgress />
