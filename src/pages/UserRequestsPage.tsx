@@ -1,19 +1,28 @@
 import React, { useEffect, useState } from 'react';
 import {
     Container, Typography, TableContainer, Table, TableHead, TableRow, TableCell,
-    TableBody, Paper, CircularProgress, TablePagination, TextField, Box,
+    TableBody, Paper, CircularProgress, TablePagination, Box, TextField,
 } from '@mui/material';
 import { useAuth } from '../context/AuthContext';
 import api from '../api/api';
 
+interface Request {
+    id: number;
+    title: string;
+    description: string;
+    status: string;
+    date: string;
+    userId: number;
+}
+
 export default function UserRequestsPage() {
     const { user, token } = useAuth();
-    const [requests, setRequests] = useState([]);
+    const [requests, setRequests] = useState<Request[]>([]);
     const [loading, setLoading] = useState(true);
     const [page, setPage] = useState(0);
     const [rowsPerPage, setRowsPerPage] = useState(5);
-    const [total, setTotal] = useState(0);
     const [search, setSearch] = useState('');
+    const [total, setTotal] = useState(0);
 
     useEffect(() => {
         if (!user) {
@@ -24,17 +33,11 @@ export default function UserRequestsPage() {
 
         setLoading(true);
 
-        api.get('/requests', {
+        api.get<Request[]>('/requests', {
             headers: { Authorization: `Bearer ${token}` },
         })
             .then((res) => {
-                let filtered = res.data.filter(r => r.userId === user.id);
-
-                if (search.trim()) {
-                    const lowerSearch = search.toLowerCase();
-                    filtered = filtered.filter(r => r.title.toLowerCase().includes(lowerSearch));
-                }
-
+                const filtered = res.data.filter(r => r.userId === user.id && r.title.includes(search));
                 setRequests(filtered);
                 setTotal(filtered.length);
             })
@@ -45,17 +48,12 @@ export default function UserRequestsPage() {
             .finally(() => setLoading(false));
     }, [user, token, search]);
 
-    const handleChangePage = (event, newPage) => {
+    const handleChangePage = (event: unknown, newPage: number) => {
         setPage(newPage);
     };
 
-    const handleChangeRowsPerPage = (event) => {
+    const handleChangeRowsPerPage = (event: React.ChangeEvent<HTMLInputElement>) => {
         setRowsPerPage(parseInt(event.target.value, 10));
-        setPage(0);
-    };
-
-    const handleSearchChange = (e) => {
-        setSearch(e.target.value);
         setPage(0);
     };
 
@@ -63,15 +61,13 @@ export default function UserRequestsPage() {
 
     return (
         <Container sx={{ mt: 4 }}>
-            <Typography variant="h5" gutterBottom>
-                Мои заявки
-            </Typography>
+            <Typography variant="h5" gutterBottom>Мои заявки</Typography>
 
             <Box mb={2}>
                 <TextField
                     label="Поиск по названию"
                     value={search}
-                    onChange={handleSearchChange}
+                    onChange={(e) => setSearch(e.target.value)}
                     fullWidth
                 />
             </Box>
@@ -93,9 +89,7 @@ export default function UserRequestsPage() {
                             <TableBody>
                                 {paginatedRequests.length === 0 && (
                                     <TableRow>
-                                        <TableCell colSpan={4} align="center">
-                                            Заявки не найдены
-                                        </TableCell>
+                                        <TableCell colSpan={4} align="center">Заявки не найдены</TableCell>
                                     </TableRow>
                                 )}
                                 {paginatedRequests.map((req) => (
@@ -108,10 +102,7 @@ export default function UserRequestsPage() {
                                         <TableCell>{req.title}</TableCell>
                                         <TableCell>{req.description}</TableCell>
                                         <TableCell>{req.status}</TableCell>
-                                        <TableCell>
-                                            {new Date(req.date).toLocaleDateString()}{' '}
-                                            {new Date(req.date).toLocaleTimeString()}
-                                        </TableCell>
+                                        <TableCell>{new Date(req.date).toLocaleString()}</TableCell>
                                     </TableRow>
                                 ))}
                             </TableBody>

@@ -5,16 +5,29 @@ import {
 import { createRequest, getObjects } from '../api/api';
 import { useAuth } from '../context/AuthContext';
 
+interface FormData {
+    title: string;
+    description: string;
+    email: string;
+    objectId: string;
+}
+
+interface ObjectItem {
+    id: string;
+    name: string;
+    address: string;
+}
+
 export default function SubmitRequestPage() {
     const { user } = useAuth();
 
-    const [form, setForm] = useState({
+    const [form, setForm] = useState<FormData>({
         title: '',
         description: '',
         email: '',
         objectId: '',
     });
-    const [objects, setObjects] = useState([]);
+    const [objects, setObjects] = useState<ObjectItem[]>([]);
     const [successLink, setSuccessLink] = useState('');
     const [error, setError] = useState('');
 
@@ -30,14 +43,14 @@ export default function SubmitRequestPage() {
         }
     }, [user]);
 
-    const handleChange = (e) => {
+    const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
         setForm((prev) => ({ ...prev, [e.target.name]: e.target.value }));
     };
 
     const handleSubmit = async () => {
         setError('');
         try {
-            const requestData = {
+            const requestData: any = {
                 title: form.title,
                 description: form.description,
                 email: form.email,
@@ -45,7 +58,7 @@ export default function SubmitRequestPage() {
                 date: new Date().toISOString(),
                 status: 'pending',
             };
-            if (user && user.id) {
+            if (user?.id) {
                 requestData.userId = user.id;
             }
             const res = await createRequest(requestData);

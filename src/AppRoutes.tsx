@@ -1,24 +1,33 @@
-import React from 'react';
+import React, { ReactNode } from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import LoginPage from './pages/auth/LoginPage';
 import RegisterPage from './pages/auth/RegisterPage';
 import SubmitRequestPage from './pages/SubmitRequestPage';
 import RequestViewPage from './pages/RequestViewPage';
+import UserRequestsPage from './pages/UserRequestsPage';
 import ObjectsPage from './pages/manager/ObjectsPage';
 import RequestsPage from './pages/manager/RequestsPage';
-import UserRequestsPage from './pages/UserRequestsPage';
 import { useAuth } from './context/AuthContext';
 
-function PrivateRoute({ children, roles }) {
+type Role = 'manager' | 'user';
+
+interface PrivateRouteProps {
+    children: ReactNode;
+    roles?: Role[];
+}
+
+function PrivateRoute({ children, roles }: PrivateRouteProps) {
     const { user } = useAuth();
 
     if (!user) {
-        return <Navigate to="/login" />;
+        return <Navigate to="/login" replace />;
     }
-    if (roles && !roles.includes(user.role)) {
-        return <Navigate to="/" />;
+
+    if (roles && (!user.role || !roles.includes(user.role as Role))) {
+        return <Navigate to="/" replace />;
     }
-    return children;
+
+    return <>{children}</>;
 }
 
 export default function AppRoutes() {
